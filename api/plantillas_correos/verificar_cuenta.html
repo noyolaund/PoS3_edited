@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Activa tu cuenta de Sublime POS 3</title>
+  <style type="text/css">
+    *,::after,::before{box-sizing:border-box;}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;text-align:left;background-color:#fff;}
+    h1{margin-top:0;margin-bottom:.5rem;}
+    p{margin-top:0;margin-bottom:1rem;}
+    ul{margin-top:0;margin-bottom:1rem;}
+    strong{font-weight:bolder;}
+    small{font-size:80%;}
+    a{color:#007bff;text-decoration:none;background-color:transparent;-webkit-text-decoration-skip:objects;}
+    a:hover{color:#0056b3;text-decoration:underline;}
+    code{font-family:monospace,monospace;font-size:1em;}
+    img{vertical-align:middle;border-style:none;}
+    h1{margin-bottom:.5rem;font-family:inherit;font-weight:500;line-height:1.2;color:inherit;}
+    h1{font-size:2.5rem;}
+    .lead{font-size:1.25rem;font-weight:300;}
+    .display-3{font-size:4.5rem;font-weight:300;line-height:1.2;}
+    small{font-size:80%;font-weight:400;}
+    .img-thumbnail{padding:.25rem;background-color:#fff;border:1px solid #dee2e6;border-radius:.25rem;max-width:100%;height:auto;}
+    code{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    code{font-size:87.5%;color:#e83e8c;word-break:break-word;}
+    .container{width:100%;padding-right:15px;padding-left:15px;margin-right:auto;margin-left:auto;}
+    @media (min-width:576px){
+      .container{max-width:540px;}
+    }
+    @media (min-width:768px){
+      .container{max-width:720px;}
+    }
+    @media (min-width:992px){
+      .container{max-width:960px;}
+    }
+    @media (min-width:1200px){
+      .container{max-width:1140px;}
+    }
+    .row{display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-15px;margin-left:-15px;}
+    .col-12,.col-md-6{position:relative;width:100%;min-height:1px;padding-right:15px;padding-left:15px;}
+    .col-12{-webkit-box-flex:0;-ms-flex:0 0 100%;flex:0 0 100%;max-width:100%;}
+    @media (min-width:768px){
+      .col-md-6{-webkit-box-flex:0;-ms-flex:0 0 50%;flex:0 0 50%;max-width:50%;}
+    }
+    .btn{display:inline-block;font-weight:400;text-align:center;white-space:nowrap;vertical-align:middle;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;border:1px solid transparent;padding:.375rem .75rem;font-size:1rem;line-height:1.5;border-radius:.25rem;transition:color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;}
+    .btn:focus,.btn:hover{text-decoration:none;}
+    .btn:focus{outline:0;box-shadow:0 0 0 .2rem rgba(0,123,255,.25);}
+    .btn:disabled{opacity:.65;}
+    .btn:not(:disabled):not(.disabled){cursor:pointer;}
+    .btn-info{color:#fff;background-color:#17a2b8;border-color:#17a2b8;}
+    .btn-info:hover{color:#fff;background-color:#138496;border-color:#117a8b;}
+    .btn-info:focus{box-shadow:0 0 0 .2rem rgba(23,162,184,.5);}
+    .btn-info:disabled{color:#fff;background-color:#17a2b8;border-color:#17a2b8;}
+    .btn-lg{padding:.5rem 1rem;font-size:1.25rem;line-height:1.5;border-radius:.3rem;}
+    .rounded-circle{border-radius:50%!important;}
+    .d-block{display:block!important;}
+    .mx-auto{margin-right:auto!important;}
+    .mx-auto{margin-left:auto!important;}
+    .text-center{text-align:center!important;}
+    @media print{
+      *,::after,::before{text-shadow:none!important;box-shadow:none!important;}
+      a:not(.btn){text-decoration:underline;}
+      img{page-break-inside:avoid;}
+      p{orphans:3;widows:3;}
+      body{min-width:992px!important;}
+      .container{min-width:992px!important;}
+    }
+    .link-img{text-decoration:none!important;}
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="display-4 text-center">Un &uacute;ltimo paso</h1>
+      <div>
+        <img style="width: 15rem;" class="mx-auto d-block img-thumbnail"
+             src="{{ .urlBasePaginaWeb }}/img/sublime_pos_logo.png"
+             alt="Imagen de SPOS 3">
+      </div>
+      <p class="lead ">
+        Te has registrado correctamente con tu negocio <strong>{{ .negocio }}</strong>. S&oacute;lo
+        falta que verifiques tu correo electr&oacute;nico haciendo click en
+        el
+        siguiente bot&oacute;n:
+        <br>
+      <div class="text-center">
+        <a target="_blank" href="{{ .urlRedirigir }}" class="btn btn-info btn-lg text-center">Verificar
+          mi cuenta</a>
+      </div>
+      </p>
+      <p>
+        Si tienes problemas con el bot&oacute;n, pega este enlace en tu navegador:
+        <br>
+        <code>{{ .urlRedirigir }}</code></p>
+      <h1 class="text-center">Estas son tus credenciales</h1>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <strong>Correo del negocio</strong>
+        {{ .correo }}
+        </li>
+        <li class="list-group-item">
+          <strong>Usuario</strong>
+          <code>admin</code>
+        </li>
+        <li class="list-group-item">
+          <strong>Contrase&ntilde;a </strong>
+          La que pusiste al registrarte
+        </li>
+      </ul>
+      <small>Nota: dentro de la aplicaci&oacute;n puedes registrar a m&aacute;s usuarios que van a entrar con el
+        mismo
+        correo, pero con un usuario y contrase&ntilde;a distintos
+      </small>
+      <p>Despu&eacute;s de haber verificado tu cuenta tal vez quieras echar un vistazo al <a target="_blank"
+                                                                                             href="{{ .urlBasePaginaWeb }}/manual">manual</a>
+        o ver las <a href="{{ .urlBasePaginaWeb }}/caracteristicas" target="_blank">caracter&iacute;sticas</a>
+      </p>
+      <h1 class="text-center">Conecta con nosotros</h1>
+      <p>
+        Puedes escribirnos un correo en <a target="_blank" href="mailto:{{ .correoSoporteYContacto }}">{{ .correoSoporteYContacto }}</a>
+        o en nuestra <a target="_blank" href="http://facebook.com/sublimepos">p&aacute;gina de Facebook</a>
+      </p>
+      <h1 class="text-center">Corre la voz</h1>
+      <p>Hemos creado una aplicaci&oacute;n de punto de venta totalmente gratuita, lo que nos motiva es que m&aacute;s
+        usuarios se integren a la plataforma.
+        <br>
+        <strong>Por favor, comparte</strong></p>
+      <div class="text-center">
+        <a class="link-img"
+           href="https://www.facebook.com/sharer.php?u={{ .urlCompartir }}&t={{ .mensajeCompartir }}"
+           target="_blank">
+          <img title="Compartir en Facebook" class="rounded-circle img-thumbnail"
+               src="{{ .urlBasePaginaWeb }}/img/social-icons/facebook-64.png"
+               alt="Compartir en Facebook">
+        </a>
+        <a class="link-img"
+           href="https://www.twitter.com/intent/tweet?hashtags=PuntoDeVenta,POS,App,SublimePOS&text={{ .mensajeCompartir }}&url={{ .urlCompartir }}"
+           target="_blank">
+          <img title="Compartir en Twitter" class="rounded-circle img-thumbnail"
+               src="{{ .urlBasePaginaWeb }}/img/social-icons/twitter-64.png"
+               alt="Compartir en Twitter">
+        </a>
+        <a class="link-img"
+           href="https://telegram.me/share/url?url={{ .urlCompartir }}&text={{ .mensajeCompartir }}"
+           target="_blank">
+          <img title="Compartir en Telegram" class="rounded-circle img-thumbnail"
+               src="{{ .urlBasePaginaWeb }}/img/social-icons/telegram-64.png"
+               alt="Compartir en Telegram">
+        </a>
+        <a class="link-img" href="https://api.whatsapp.com/send?text={{ .mensajeCompartir }} {{ .urlCompartir }}" target="_blank">
+          <img title="Compartir en WhatsApp" class="rounded-circle img-thumbnail"
+               src="{{ .urlBasePaginaWeb }}/img/social-icons/whatsapp-64.png"
+               alt="Compartir en WhatsApp">
+        </a>
+      </div>
+
+    </div>
+  </div>
+  <div>
+    <br><br>
+  </div>
+</div>
+</body>
+</html>
