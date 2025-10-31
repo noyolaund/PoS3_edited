@@ -6,6 +6,7 @@
       :mostrar="dialogos.cambiarPrecio"
     ></dialogo-cambiar-precio-venta>
     <v-text-field
+      ref="codigoInput"
       @click:prepend="quiereBuscarProducto"
       label="Escanear código o escribir el número y presionar Enter"
       v-model="codigo"

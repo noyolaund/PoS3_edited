@@ -223,3 +223,20 @@ npm run build --report
 ```
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+
+## Nuevas funcionalidades agregadas
+
+Se han añadido recientemente mejoras en la sección de ventas para agilizar la búsqueda y entrada de productos:
+
+- Buscador inline en la pantalla de Vender: ahora verás un campo de texto con autocompletado en la parte superior de la sección de ventas. Mientras escribes se consultan los productos y aparecen sugerencias (igual que en el diálogo de búsqueda existente).
+- Atajos de teclado:
+    - F8: abrir el diálogo para terminar la venta al contado (existente).
+    - F9: enfocar el buscador inline (útil para empezar a escribir y buscar productos al vuelo).
+    - /: enfocar el campo inicial de entrada de código / escaneo (el campo donde normalmente pegas o escribes un código de barras para añadir productos rápidamente).
+
+Notas de implementación:
+- El componente `AutocompletadoProductos` fue añadido inline a `src/components/Vender/Vender.vue` y se puede enfocar con F9.
+- El campo de código en `src/components/Vender/ListaDeProductos.vue` tiene ahora la propiedad `ref="codigoInput"` y puede enfocarse con la tecla Shift desde cualquier parte de la UI.
+- Se ajustó ligeramente el espaciado visual alrededor del autocompletado para que ocupe menos espacio entre la cabecera y el campo de búsqueda.
+
+Si prefieres otros atajos (por ejemplo `/` para buscar), o quieres deshabilitar alguno por defecto, dímelo y lo ajusto.

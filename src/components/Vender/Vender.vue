@@ -7,6 +7,13 @@
         :mostrar="dialogos.buscar"
       ></dialogo-busqueda-producto>
 
+      <!-- Autocompletado inline para buscar productos mientras se vende -->
+      <autocompletado-productos
+        ref="autocompletado"
+        class="inline-autocomplete"
+        @producto-seleccionado="onProductoSeleccionadoDesdeBusqueda"
+      ></autocompletado-productos>
+
       <lista-de-productos
         @buscar-producto="mostrarDialogoParaBuscarProducto()"
         @producto-no-existente="onProductoNoExistente"
@@ -170,24 +177,10 @@ import DialogoVentaContado from "../Vender/DialogoVentaContado";
 import DialogoApartado from "../Vender/DialogoApartado";
 import SpeedDial from "../Vender/SpeedDial";
 import DialogoBusquedaProducto from '../Vender/DialogoBusquedaProducto';
+import AutocompletadoProductos from '../Vender/AutocompletadoProductos';
 import DialogoConfirmacionVaciarLista from '../Vender/DialogoConfirmacionVaciarLista';
 import { EventBus } from "../../main";
 
-/* Added to make the hotkey */
-
-/* function showAlert() { 
-  alert("A was pressed!!!!!");
-} 
-  
-document 
-  .addEventListener("keydown", 
-    function (event) { 
-      if (event.key === "a") { 
-        event.preventDefault();
-        onVentaContado();
-        showAlert();  
-  } 
-});  */
 
 export default {
   beforeMount() {
@@ -208,6 +201,7 @@ export default {
     FormularioNuevoCliente,
     DialogoApartado,
     DialogoBusquedaProducto,
+    AutocompletadoProductos,
     DialogoConfirmacionVaciarLista
   },
   data: () => ({
@@ -233,12 +227,53 @@ export default {
   }),
   methods: {
     handleKeydown(event) {
-      // F8 -> event.key === 'F8' (modern browsers), keyCode 119 (legacy)
+      // F8 -> abrir diálogo de venta al contado
       if (event.key === "F8" || event.keyCode === 119) {
-        // Evitar comportamiento por defecto y abrir la ventana de contado
         event.preventDefault();
         this.onVentaContado();
+        return;
       }
+
+      // F9 -> enfocar el autocompletado inline
+      if (event.key === "F9" || event.keyCode === 120) {
+        event.preventDefault();
+        this.focusAutocompletado();
+        return;
+      }
+
+      // / -> enfocar el campo inicial de código/entrada en ListaDeProductos
+      if (event.key === "/") {
+        event.preventDefault();
+        this.focusCodigoInicial();
+        return;
+      }
+    },
+
+    focusAutocompletado() {
+      // Accede al input interno del componente AutocompletadoProductos
+      this.$nextTick(() => {
+        try {
+          const ac = this.$refs.autocompletado;
+          if (ac && ac.$refs && ac.$refs.input && typeof ac.$refs.input.focus === 'function') {
+            ac.$refs.input.focus();
+          }
+        } catch (e) {
+          // no-op
+        }
+      });
+    },
+
+    focusCodigoInicial() {
+      this.$nextTick(() => {
+        try {
+          const lista = this.$refs.listaDeProductos;
+          if (lista && lista.$refs && lista.$refs.codigoInput && typeof lista.$refs.codigoInput.focus === 'function') {
+            lista.$refs.codigoInput.focus();
+          }
+        } catch (e) {
+          // no-op
+        }
+      });
     },
     mostrarDialogoConfirmacionSiEsNecesario() {
       if (this.$refs.listaDeProductos.totalVenta > 0) this.dialogos.confirmarEliminacion = true;
@@ -314,3 +349,16 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+/* Reducir el espacio superior alrededor del autocompletado inline */
+.inline-autocomplete {
+  margin-top: -20px;
+  margin-bottom: -20px;
+}
+
+/* Ajuste adicional para el layout si hace falta */
+v-layout {
+  padding-top: 4px;
+}
+</style>
