@@ -37,9 +37,31 @@ func (v *VentasContadoController) anular(idVenta int) {
 		return
 	}
 	for _, producto := range productos {
-		_, err = sentenciaPreparadaActualizarProducto.Exec(producto.Cantidad, producto.Numero)
+		// Determinar si el producto es hijo y ajustar existencia del padre en su lugar
+		var idPadre int
+		var equivalencia int
+		fila := tx.QueryRow("SELECT idPadre, equivalencia FROM productos WHERE idProducto = ?;", producto.Numero)
+		err = fila.Scan(&idPadre, &equivalencia)
 		if err != nil {
-			log.Printf("Error actualizando existencia de producto:\n%q", err)
+			// Si ocurre un error al obtener la relación, intentar aplicar sobre el propio producto
+			_, err = sentenciaPreparadaActualizarProducto.Exec(producto.Cantidad, producto.Numero)
+			if err != nil {
+				log.Printf("Error actualizando existencia de producto:\n%q", err)
+			}
+			continue
+		}
+		if idPadre > 0 && equivalencia > 0 {
+			// producto.Cantidad representa unidades hijo (piezas). Convertir a cantidad de padre (cartones)
+			delta := RoundToTwoDecimals(producto.Cantidad / float64(equivalencia))
+			_, err = sentenciaPreparadaActualizarProducto.Exec(delta, idPadre)
+			if err != nil {
+				log.Printf("Error actualizando existencia de producto padre:\n%q", err)
+			}
+		} else {
+			_, err = sentenciaPreparadaActualizarProducto.Exec(producto.Cantidad, producto.Numero)
+			if err != nil {
+				log.Printf("Error actualizando existencia de producto:\n%q", err)
+			}
 		}
 	}
 	consultaEliminarVenta := "DELETE FROM ventas_contado WHERE idVenta = ?"
@@ -187,9 +209,30 @@ func (v *VentasContadoController) nueva(vc *VentaContado) int64 {
 		if err != nil {
 			log.Printf("Error insertando producto vendido:\n%q", err)
 		}
-		_, err = sentenciaPreparadaActualizarProducto.Exec(producto.Cantidad, producto.Numero)
+		// Ajustar existencia: si el producto es hijo, restar fracción del padre
+		var idPadre int
+		var equivalencia int
+		fila := tx.QueryRow("SELECT idPadre, equivalencia FROM productos WHERE idProducto = ?;", producto.Numero)
+		err = fila.Scan(&idPadre, &equivalencia)
 		if err != nil {
-			log.Printf("Error actualizando existencia de producto:\n%q", err)
+			// Si falla la consulta, aplicar la resta directamente sobre el producto
+			_, err = sentenciaPreparadaActualizarProducto.Exec(producto.Cantidad, producto.Numero)
+			if err != nil {
+				log.Printf("Error actualizando existencia de producto:\n%q", err)
+			}
+			continue
+		}
+		if idPadre > 0 && equivalencia > 0 {
+			delta := RoundToTwoDecimals(producto.Cantidad / float64(equivalencia))
+			_, err = sentenciaPreparadaActualizarProducto.Exec(delta, idPadre)
+			if err != nil {
+				log.Printf("Error actualizando existencia de producto padre:\n%q", err)
+			}
+		} else {
+			_, err = sentenciaPreparadaActualizarProducto.Exec(producto.Cantidad, producto.Numero)
+			if err != nil {
+				log.Printf("Error actualizando existencia de producto:\n%q", err)
+			}
 		}
 	}
 	tx.Commit()

@@ -77,15 +77,26 @@ export default {
       if (this.cargando) return;
       if (!this.$refs.formulario.validate()) return;
       let producto = Object.assign({}, this.producto);
-      producto.Existencia += this.cantidadQueSeAgrega;
       this.cargando = true;
-      HTTP_AUTH.put("producto", producto).then(respuesta => {
-        if (respuesta) {
-          this.$emit("aumentado");
-          this.cantidadQueSeAgrega = null;
-          this.cargando = false;
-        }
-      });
+      // Si el producto es hijo, llamar al endpoint de reabastecer para que actualice al padre
+      if (producto.Padre && producto.Padre > 0) {
+        HTTP_AUTH.post("producto/reabastecer", { idProducto: producto.Numero, cantidad: this.cantidadQueSeAgrega }).then(respuesta => {
+          if (respuesta) {
+            this.$emit("aumentado");
+            this.cantidadQueSeAgrega = null;
+            this.cargando = false;
+          }
+        });
+      } else {
+        producto.Existencia += this.cantidadQueSeAgrega;
+        HTTP_AUTH.put("producto", producto).then(respuesta => {
+          if (respuesta) {
+            this.$emit("aumentado");
+            this.cantidadQueSeAgrega = null;
+            this.cargando = false;
+          }
+        });
+      }
     },
     cerrarDialogo() {
       this.$refs.formulario.reset();

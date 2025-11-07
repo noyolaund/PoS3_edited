@@ -66,7 +66,28 @@
                 ></v-text-field>
               </v-flex>
               <v-flex xs12 md6>
+                <v-checkbox
+                  v-model="esHijo"
+                  label="Este producto es hijo (pieza)"
+                ></v-checkbox>
+                <v-select
+                  v-if="esHijo"
+                  :items="padres"
+                  item-text="Descripcion"
+                  item-value="Numero"
+                  label="Producto padre"
+                  v-model="producto.padre"
+                  hint="Seleccione el producto contenedor (cartón)"
+                ></v-select>
                 <v-text-field
+                  v-if="esHijo"
+                  label="Equivalencia (piezas por contenedor)"
+                  type="number"
+                  v-model.number="producto.equivalencia"
+                  hint="Cuántas piezas contiene un cartón (p.ej. 12)"
+                ></v-text-field>
+                <v-text-field
+                  v-if="!esHijo"
                   label="Existencia actual"
                   type="number"
                   v-model.number="producto.existencia"
@@ -74,6 +95,9 @@
                   hint="Existencia actual"
                   required
                 ></v-text-field>
+                <v-alert v-if="esHijo" type="info" dense>
+                  La existencia se gestionará desde el producto padre. Use "Agregar inventario" para reabastecer piezas.
+                </v-alert>
               </v-flex>
             </v-layout>
           </v-container>
@@ -102,6 +126,7 @@ export default {
   watch: {
     mostrar(estaMostrado) {
       if (estaMostrado) {
+        this.obtenerPadres();
         this.enfocarCodigoDeBarras();
         this.obtenerSiguienteNumero();
         if (this.productoParaDuplicar.Numero) {
@@ -150,6 +175,12 @@ export default {
         this.producto.numero = siguienteNumero;
       });
     },
+    obtenerPadres() {
+      HTTP_AUTH.get("productos/0/1000").then(resultados => {
+        // El API devuelve los campos con mayúscula en las claves
+        this.padres = resultados.Productos.filter(p => !p.Padre || p.Padre == 0);
+      });
+    },
     resetearFormulario() {
       this.$refs.formulario.reset();
     },
@@ -160,6 +191,10 @@ export default {
     guardar() {
       if (this.$refs.formulario.validate()) {
         let producto = Object.assign({}, this.producto);
+        if (this.esHijo) {
+          // Hijos no almacenan existencia propia al crear; la existencia se maneja con reabastecer
+          producto.existencia = 0;
+        }
         this.cargando = true;
         HTTP_AUTH.post("producto", producto).then(resultados => {
           this.cargando = false;
@@ -178,7 +213,9 @@ export default {
   props: ["mostrar", "productoParaDuplicar"],
   data: () => ({
     cargando: false,
-    producto: { existencia: 0, numero: 1 },
+    producto: { existencia: 0, numero: 1, padre: 0, equivalencia: 1 },
+    padres: [],
+    esHijo: false,
     reglas: {
       codigoBarras: [
         codigoBarras => {

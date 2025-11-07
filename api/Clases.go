@@ -108,6 +108,9 @@ type Producto struct {
 	Numero                                       int
 	Descripcion, CodigoBarras                    string
 	PrecioCompra, PrecioVenta, Existencia, Stock float64
+	// Relación padre-hijo
+	Padre        int // idProducto del producto padre. 0 si no tiene padre
+	Equivalencia int // cuántas unidades hijo equivalen a 1 unidad padre (p.ej. 12)
 }
 
 type ProductoApartado struct {

@@ -75,7 +75,28 @@
                 ></v-text-field>
               </v-flex>
               <v-flex xs12 md6>
+                <v-checkbox
+                  v-model="esHijo"
+                  label="Este producto es hijo (pieza)"
+                ></v-checkbox>
+                <v-select
+                  v-if="esHijo"
+                  :items="padres"
+                  item-text="Descripcion"
+                  item-value="Numero"
+                  label="Producto padre"
+                  v-model="producto.Padre"
+                  hint="Seleccione el producto contenedor (cartón)"
+                ></v-select>
                 <v-text-field
+                  v-if="esHijo"
+                  label="Equivalencia (piezas por contenedor)"
+                  type="number"
+                  v-model.number="producto.Equivalencia"
+                  hint="Cuántas piezas contiene un cartón (p.ej. 12)"
+                ></v-text-field>
+                <v-text-field
+                  v-if="!esHijo"
                   label="Existencia actual"
                   type="number"
                   v-model.number="producto.Existencia"
@@ -83,6 +104,9 @@
                   hint="Existencia actual"
                   required
                 ></v-text-field>
+                <v-alert v-if="esHijo" type="info" dense>
+                  La existencia se gestiona desde el producto padre. Use "Agregar inventario" para reabastecer piezas.
+                </v-alert>
               </v-flex>
             </v-layout>
           </v-container>
@@ -127,6 +151,11 @@ export default {
       this.resetearFormulario();
       this.$emit("cerrar-dialogo");
     },
+    obtenerPadres() {
+      HTTP_AUTH.get("productos/0/1000").then(resultados => {
+        this.padres = resultados.Productos.filter(p => !p.Padre || p.Padre == 0);
+      });
+    },
     guardar() {
       if (this.$refs.formulario.validate()) {
         let producto = Object.assign({}, this.producto);
@@ -143,9 +172,19 @@ export default {
       }
     }
   },
+  watch: {
+    mostrar(esta) {
+      if (esta) {
+        this.obtenerPadres();
+        this.esHijo = this.producto.Padre && this.producto.Padre > 0;
+      }
+    }
+  },
   props: ["mostrar", "producto"],
   data: () => ({
     cargando: false,
+    padres: [],
+    esHijo: false,
     reglas: {
       numero: [
         numero => {

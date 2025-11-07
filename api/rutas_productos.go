@@ -207,6 +207,29 @@ func configurarRutasDeProductos(enrutador *mux.Router) {
 		responderHttpExitoso(true, w, r)
 	}).Name("ActualizarProducto").Methods(http.MethodPut)
 
+	enrutador.HandleFunc("/producto/reabastecer", func(w http.ResponseWriter, r *http.Request) {
+		var payload struct{
+			IdProducto int     `json:"idProducto"`
+			Cantidad   float64 `json:"cantidad"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&payload)
+		if err != nil {
+			responderHttpConError(err, w, r)
+			return
+		}
+		pc := ProductosController{
+			AjustesUsuario: AjustesDeUsuarioLogueado{
+				httpResponseWriter: w,
+				httpRequest:        r,
+			},
+		}
+		if err := pc.reabastecer(payload.IdProducto, payload.Cantidad); err != nil {
+			responderHttpConError(err, w, r)
+			return
+		}
+		responderHttpExitoso(true, w, r)
+	}).Name("ReabastecerProducto").Methods(http.MethodPost)
+
 	enrutador.HandleFunc("/producto/{idProducto}", func(w http.ResponseWriter, r *http.Request) {
 		variables := mux.Vars(r)
 		idProducto, err := strconv.Atoi(variables["idProducto"])

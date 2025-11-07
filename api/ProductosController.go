@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -62,6 +63,9 @@ func (p *ProductosController) importarExcel(archivo multipart.File, informacion 
 			log.Printf("Error abriendo base de datos al importar productos: %q", err)
 			panic(err)
 		}
+
+		// Asegurar que las columnas idPadre y equivalencia existen
+		ensureProductosColumns(db)
 
 		defer db.Close()
 
@@ -168,12 +172,14 @@ func (p *ProductosController) exportarCSV(ajustes *AjustesParaExportarProductos)
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	// Asegurar columnas necesarias
+	ensureProductosColumns(db)
 
 	defer db.Close()
 	rutaArchivo := obtenerRutaActual() + "/" + NombreArchivoExportadoCSV
 	os.Remove(rutaArchivo)
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, precioVenta, existencia, 
-stock FROM productos ORDER BY idProducto DESC;`)
+stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC;`)
 	if err != nil {
 		log.Printf("Error al realizar la consulta para exportar productos a CSV:\n%q", err)
 		return
@@ -192,7 +198,7 @@ stock FROM productos ORDER BY idProducto DESC;`)
 	for filas.Next() {
 
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion, &producto.PrecioCompra,
-			&producto.PrecioVenta, &producto.Existencia, &producto.Stock)
+			&producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		for contador := 0; contador < ajustes.Copias; contador++ {
 			archivo.WriteString(fmt.Sprintf("%d,%s,%s,%0.2f,%0.2f,%0.2f,%0.2f\n",
 				producto.Numero, producto.CodigoBarras, producto.Descripcion, producto.PrecioCompra,
@@ -217,6 +223,8 @@ func (p *ProductosController) exportarExcel(ajustes *AjustesParaExportarProducto
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	// Asegurar columnas necesarias
+	ensureProductosColumns(db)
 
 	defer db.Close()
 
@@ -224,7 +232,7 @@ func (p *ProductosController) exportarExcel(ajustes *AjustesParaExportarProducto
 	os.Remove(rutaArchivo)
 
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, precioVenta, existencia, 
-stock FROM productos ORDER BY idProducto DESC;`)
+stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC;`)
 	if err != nil {
 		log.Printf("Error al realizar la consulta para exportar productos a Excel:\n%q", err)
 		return
@@ -249,7 +257,7 @@ stock FROM productos ORDER BY idProducto DESC;`)
 	for filas.Next() {
 
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion, &producto.PrecioCompra,
-			&producto.PrecioVenta, &producto.Existencia, &producto.Stock)
+			&producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		for contador := 0; contador < ajustes.Copias; contador++ {
 			fila = hoja.AddRow()
 			celda = fila.AddCell()
@@ -405,10 +413,11 @@ func (p *ProductosController) buscarParaAutocompletado(busqueda string) []Produc
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	ensureProductosColumns(db)
 
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, precioVenta, existencia, 
-stock  FROM productos WHERE descripcion LIKE ? ORDER BY idProducto DESC LIMIT ?;`,
+stock, idPadre, equivalencia FROM productos WHERE descripcion LIKE ? ORDER BY idProducto DESC LIMIT ?;`,
 		"%"+busqueda+"%", LimiteBusquedaProductosAutocompletado)
 	if err != nil {
 		log.Printf("Error en consulta al realizar una búsqueda en productos para autocompletado:\n%q", err)
@@ -421,7 +430,7 @@ stock  FROM productos WHERE descripcion LIKE ? ORDER BY idProducto DESC LIMIT ?;
 	for filas.Next() {
 		var producto Producto
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion, &producto.PrecioCompra,
-			&producto.PrecioVenta, &producto.Existencia, &producto.Stock)
+			&producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		if err != nil {
 			log.Printf("Error al escanear resultados de búsqueda en productos para autocompletado:\n%q", err)
 		}
@@ -438,13 +447,20 @@ func (p *ProductosController) nuevo(producto *Producto) {
 		nombreTabla:    "productos",
 		AjustesUsuario: p.AjustesUsuario,
 	}
+	existencia := producto.Existencia
+	if producto.Padre > 0 {
+		// Los hijos no almacenan existencia propia; la maneja el padre
+		existencia = 0
+	}
 	ayudante.insertar(map[string]interface{}{
 		"descripcion":  producto.Descripcion,
 		"codigoBarras": producto.CodigoBarras,
 		"precioCompra": producto.PrecioCompra,
 		"precioVenta":  producto.PrecioVenta,
-		"existencia":   producto.Existencia,
+		"existencia":   existencia,
 		"stock":        producto.Stock,
+		"idPadre":      producto.Padre,
+		"equivalencia": producto.Equivalencia,
 	})
 }
 func (p *ProductosController) actualizar(producto *Producto) {
@@ -452,14 +468,66 @@ func (p *ProductosController) actualizar(producto *Producto) {
 		nombreTabla:    "productos",
 		AjustesUsuario: p.AjustesUsuario,
 	}
-	ayudante.actualizarDonde("idProducto", producto.Numero, map[string]interface{}{
+	campos := map[string]interface{}{
 		"descripcion":  producto.Descripcion,
 		"codigoBarras": producto.CodigoBarras,
 		"precioCompra": producto.PrecioCompra,
 		"precioVenta":  producto.PrecioVenta,
-		"existencia":   producto.Existencia,
 		"stock":        producto.Stock,
-	})
+		"idPadre":      producto.Padre,
+		"equivalencia": producto.Equivalencia,
+	}
+	// No permitir actualizar existencia de un producto hijo directamente
+	if producto.Padre == 0 {
+		campos["existencia"] = producto.Existencia
+	}
+	ayudante.actualizarDonde("idProducto", producto.Numero, campos)
+}
+
+// reabastecer incrementa existencia. Si se pasa el id de un producto hijo,
+// convierte la cantidad en unidades padre y actualiza la existencia del padre.
+func (p *ProductosController) reabastecer(idProducto int, cantidad float64) error {
+	db, err := p.AjustesUsuario.obtenerBaseDeDatos()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Obtener relación padre/equivalencia
+	var idPadre int
+	var equivalencia int
+	fila := tx.QueryRow("SELECT idPadre, equivalencia FROM productos WHERE idProducto = ?;", idProducto)
+	if err := fila.Scan(&idPadre, &equivalencia); err != nil {
+		// Si falla, aplicar al propio producto
+		_, err = tx.Exec("UPDATE productos SET existencia = existencia + ? WHERE idProducto = ?;", cantidad, idProducto)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		return tx.Commit()
+	}
+
+	if idPadre > 0 && equivalencia > 0 {
+		delta := RoundToTwoDecimals(cantidad / float64(equivalencia))
+		_, err = tx.Exec("UPDATE productos SET existencia = existencia + ? WHERE idProducto = ?;", delta, idPadre)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else {
+		_, err = tx.Exec("UPDATE productos SET existencia = existencia + ? WHERE idProducto = ?;", cantidad, idProducto)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 func (p *ProductosController) eliminar(producto *Producto) {
 	ayudante := AyudanteBaseDeDatos{
@@ -475,10 +543,11 @@ func (p *ProductosController) todos(offset, limite int) ProductosConConteo {
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	ensureProductosColumns(db)
 
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, precioVenta, existencia, 
-stock  FROM productos ORDER BY idProducto DESC LIMIT ? OFFSET ?;`, limite, offset)
+stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC LIMIT ? OFFSET ?;`, limite, offset)
 	if err != nil {
 		log.Printf("Error al realizar la consulta para obtener todos los productos:\n%q", err)
 		return pc
@@ -490,7 +559,7 @@ stock  FROM productos ORDER BY idProducto DESC LIMIT ? OFFSET ?;`, limite, offse
 	for filas.Next() {
 		var producto Producto
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion, &producto.PrecioCompra,
-			&producto.PrecioVenta, &producto.Existencia, &producto.Stock)
+			&producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		if err != nil {
 			log.Printf("Error al escanear todos los productos:\n%q", err)
 		}
@@ -514,7 +583,7 @@ func (p *ProductosController) enStock(offset, limite int) ProductosConConteo {
 	}
 
 	defer db.Close()
-	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, existencia, stock  FROM productos 
+	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, existencia, stock, idPadre, equivalencia FROM productos 
 WHERE existencia < stock ORDER BY idProducto DESC LIMIT ? OFFSET ?;`, limite, offset)
 	if err != nil {
 		log.Printf("Error al realizar la consulta para obtener productos en stock:\n%q", err)
@@ -527,7 +596,7 @@ WHERE existencia < stock ORDER BY idProducto DESC LIMIT ? OFFSET ?;`, limite, of
 	for filas.Next() {
 		var producto Producto
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion,
-			&producto.Existencia, &producto.Stock)
+			&producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		if err != nil {
 			log.Printf("Error al escanear productos en stock:\n%q", err)
 		}
@@ -551,7 +620,7 @@ func (p *ProductosController) buscar(offset, limite int, descripcion string) Pro
 
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, 
-precioVenta, existencia, stock  FROM productos WHERE descripcion LIKE ? ORDER BY idProducto DESC LIMIT ? OFFSET ?;`,
+precioVenta, existencia, stock, idPadre, equivalencia FROM productos WHERE descripcion LIKE ? ORDER BY idProducto DESC LIMIT ? OFFSET ?;`,
 		"%"+descripcion+"%", limite, offset)
 	if err != nil {
 		log.Printf("Error en consulta al realizar una búsqueda en productos:\n%q", err)
@@ -564,7 +633,7 @@ precioVenta, existencia, stock  FROM productos WHERE descripcion LIKE ? ORDER BY
 	for filas.Next() {
 		var producto Producto
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion,
-			&producto.PrecioCompra, &producto.PrecioVenta, &producto.Existencia, &producto.Stock)
+			&producto.PrecioCompra, &producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		if err != nil {
 			log.Printf("Error al escanear resultados de búsqueda en productos:\n%q", err)
 		}
@@ -731,6 +800,9 @@ func (p *ProductosController) porRowid(idProducto int) *Producto {
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	// Asegurar que las columnas idPadre y equivalencia existen
+	ensureProductosColumns(db)
+
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, 
 precioCompra, precioVenta, existencia, stock  FROM productos WHERE idProducto = ? LIMIT 1;`, idProducto)
@@ -751,6 +823,20 @@ precioCompra, precioVenta, existencia, stock  FROM productos WHERE idProducto = 
 		log.Printf("Error al escanear producto por idProducto:\n%q", err)
 		return nil
 	}
+	// Si el producto es hijo (tiene idPadre), calcular existencia y stock equivalentes
+	filaPadre := db.QueryRow(`SELECT idPadre, equivalencia FROM productos WHERE idProducto = ? LIMIT 1;`, idProducto)
+	var idPadre int
+	var equivalencia int
+	if err := filaPadre.Scan(&idPadre, &equivalencia); err == nil {
+		if idPadre > 0 && equivalencia > 0 {
+			fila := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, idPadre)
+			var existenciaPadre, stockPadre float64
+			if err := fila.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(equivalencia))
+			}
+		}
+	}
 	return &producto
 }
 func (p *ProductosController) porCodigoDeBarras(codigoDeBarras string) *Producto {
@@ -760,6 +846,9 @@ func (p *ProductosController) porCodigoDeBarras(codigoDeBarras string) *Producto
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	// Asegurar que las columnas idPadre y equivalencia existen
+	ensureProductosColumns(db)
+
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, 
 precioVenta, existencia, stock  FROM productos WHERE codigoBarras = ? LIMIT 1;`, codigoDeBarras)
@@ -780,5 +869,56 @@ precioVenta, existencia, stock  FROM productos WHERE codigoBarras = ? LIMIT 1;`,
 		log.Printf("Error al escanear producto por código de barras:\n%q", err)
 		return nil
 	}
+	// Si el producto es hijo (tiene idPadre), calcular existencia y stock equivalentes
+	filaPadre := db.QueryRow(`SELECT idPadre, equivalencia FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Numero)
+	var idPadre int
+	var equivalencia int
+	if err := filaPadre.Scan(&idPadre, &equivalencia); err == nil {
+		if idPadre > 0 && equivalencia > 0 {
+			fila := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, idPadre)
+			var existenciaPadre, stockPadre float64
+			if err := fila.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(equivalencia))
+			}
+		}
+	}
 	return &producto
+}
+
+// ensureProductosColumns agrega las columnas idPadre y equivalencia a la tabla productos
+// si no existen. Esto evita errores en instalaciones antiguas que no tienen el nuevo esquema.
+func ensureProductosColumns(db *sql.DB) {
+	filas, err := db.Query("PRAGMA table_info(productos);")
+	if err != nil {
+		return
+	}
+	defer filas.Close()
+
+	hasIdPadre := false
+	hasEquivalencia := false
+	for filas.Next() {
+		var cid int
+		var name string
+		var ctype string
+		var notnull int
+		var dflt sql.NullString
+		var pk int
+		if err := filas.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			continue
+		}
+		if name == "idPadre" {
+			hasIdPadre = true
+		}
+		if name == "equivalencia" {
+			hasEquivalencia = true
+		}
+	}
+
+	if !hasIdPadre {
+		_, _ = db.Exec("ALTER TABLE productos ADD COLUMN idPadre INTEGER NOT NULL DEFAULT 0;")
+	}
+	if !hasEquivalencia {
+		_, _ = db.Exec("ALTER TABLE productos ADD COLUMN equivalencia INTEGER NOT NULL DEFAULT 1;")
+	}
 }

@@ -5,7 +5,10 @@ CREATE TABLE IF NOT EXISTS productos (
   precioCompra REAL NOT NULL,
   precioVenta REAL NOT NULL,
   existencia REAL NOT NULL,
-  stock REAL NOT NULL
+  stock REAL NOT NULL,
+  -- Para relación padre-hijo
+  idPadre INTEGER NOT NULL DEFAULT 0,
+  equivalencia INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS clientes (

@@ -8,6 +8,7 @@ package main
 
 import (
 	"bytes"
+	"math"
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/hex"
@@ -276,4 +277,10 @@ func generarTokenSeguro() (string, error) {
 func timestampParaMySQL() string {
 	//https://golang.org/src/time/format.go
 	return time.Now().Format("2006-01-02T15:04:05")
+}
+
+// RoundToTwoDecimals redondea un float64 a 2 decimales.
+// Se usa para almacenar valores parciales de existencia con 2 decimales
+func RoundToTwoDecimals(v float64) float64 {
+	return math.Round(v*100) / 100
 }
