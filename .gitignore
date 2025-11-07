@@ -9,7 +9,6 @@ yarn-error.log*
 
 # Production / build output
 /dist/
-/build/
 /.cache/
 
 # Logs
@@ -153,7 +152,6 @@ api/spos3.db-shm
 api/spos3.db-wal
 .idea/tiendas.iml
 .idea/**
-static
 bindata.go
 api/bindata.goes
 api/*.exe
@@ -162,3 +160,5 @@ api/ProductosExportados_SPOS3.xlsx
 *.lock
 api/ce.sqlite
 api/sesiones.sqlite
+api/temp_app_js
+api/temp_index.html
