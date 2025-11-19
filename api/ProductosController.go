@@ -199,13 +199,22 @@ stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC;`)
 
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion, &producto.PrecioCompra,
 			&producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
+		if err != nil {
+			log.Printf("Error al escanear un producto para exportar:\n%q", err)
+		}
+		// Si es producto hijo, recalcular existencia y stock a partir del padre
+		if producto.Padre > 0 && producto.Equivalencia > 0 {
+			filaPadre := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Padre)
+			var existenciaPadre, stockPadre float64
+			if err := filaPadre.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(producto.Equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(producto.Equivalencia))
+			}
+		}
 		for contador := 0; contador < ajustes.Copias; contador++ {
 			archivo.WriteString(fmt.Sprintf("%d,%s,%s,%0.2f,%0.2f,%0.2f,%0.2f\n",
 				producto.Numero, producto.CodigoBarras, producto.Descripcion, producto.PrecioCompra,
 				producto.PrecioVenta, producto.Existencia, producto.Stock))
-		}
-		if err != nil {
-			log.Printf("Error al escanear un producto para exportar:\n%q", err)
 		}
 	}
 
@@ -258,6 +267,18 @@ stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC;`)
 
 		err := filas.Scan(&producto.Numero, &producto.CodigoBarras, &producto.Descripcion, &producto.PrecioCompra,
 			&producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
+		if err != nil {
+			log.Printf("Error al escanear un producto para exportar:\n%q", err)
+		}
+		// Si es producto hijo, recalcular existencia y stock a partir del padre
+		if producto.Padre > 0 && producto.Equivalencia > 0 {
+			filaPadre := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Padre)
+			var existenciaPadre, stockPadre float64
+			if err := filaPadre.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(producto.Equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(producto.Equivalencia))
+			}
+		}
 		for contador := 0; contador < ajustes.Copias; contador++ {
 			fila = hoja.AddRow()
 			celda = fila.AddCell()
@@ -274,9 +295,6 @@ stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC;`)
 			celda.SetFloat(producto.Existencia)
 			celda = fila.AddCell()
 			celda.SetFloat(producto.Stock)
-		}
-		if err != nil {
-			log.Printf("Error al escanear un producto para exportar:\n%q", err)
 		}
 	}
 
@@ -434,6 +452,15 @@ stock, idPadre, equivalencia FROM productos WHERE descripcion LIKE ? ORDER BY id
 		if err != nil {
 			log.Printf("Error al escanear resultados de búsqueda en productos para autocompletado:\n%q", err)
 		}
+		// Si es producto hijo, recalcular existencia y stock a partir del padre
+		if producto.Padre > 0 && producto.Equivalencia > 0 {
+			filaPadre := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Padre)
+			var existenciaPadre, stockPadre float64
+			if err := filaPadre.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(producto.Equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(producto.Equivalencia))
+			}
+		}
 		productos = append(productos, producto)
 	}
 
@@ -563,6 +590,15 @@ stock, idPadre, equivalencia FROM productos ORDER BY idProducto DESC LIMIT ? OFF
 		if err != nil {
 			log.Printf("Error al escanear todos los productos:\n%q", err)
 		}
+		// Si es producto hijo, recalcular existencia y stock a partir del padre
+		if producto.Padre > 0 && producto.Equivalencia > 0 {
+			filaPadre := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Padre)
+			var existenciaPadre, stockPadre float64
+			if err := filaPadre.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(producto.Equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(producto.Equivalencia))
+			}
+		}
 		productos = append(productos, producto)
 	}
 
@@ -581,6 +617,8 @@ func (p *ProductosController) enStock(offset, limite int) ProductosConConteo {
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+	// Asegurar que las columnas nuevas existen
+	ensureProductosColumns(db)
 
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, existencia, stock, idPadre, equivalencia FROM productos 
@@ -600,6 +638,15 @@ WHERE existencia < stock ORDER BY idProducto DESC LIMIT ? OFFSET ?;`, limite, of
 		if err != nil {
 			log.Printf("Error al escanear productos en stock:\n%q", err)
 		}
+		// Si es producto hijo, recalcular existencia y stock a partir del padre
+		if producto.Padre > 0 && producto.Equivalencia > 0 {
+			filaPadre := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Padre)
+			var existenciaPadre, stockPadre float64
+			if err := filaPadre.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(producto.Equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(producto.Equivalencia))
+			}
+		}
 		productos = append(productos, producto)
 	}
 
@@ -617,6 +664,9 @@ func (p *ProductosController) buscar(offset, limite int, descripcion string) Pro
 		log.Fatalf("Error abriendo base de datos: %v", err)
 		panic(err)
 	}
+
+	// Asegurar que las columnas idPadre y equivalencia existen (migración en caliente)
+	ensureProductosColumns(db)
 
 	defer db.Close()
 	filas, err := db.Query(`SELECT idProducto, codigoBarras, descripcion, precioCompra, 
@@ -636,6 +686,15 @@ precioVenta, existencia, stock, idPadre, equivalencia FROM productos WHERE descr
 			&producto.PrecioCompra, &producto.PrecioVenta, &producto.Existencia, &producto.Stock, &producto.Padre, &producto.Equivalencia)
 		if err != nil {
 			log.Printf("Error al escanear resultados de búsqueda en productos:\n%q", err)
+		}
+		// Si es producto hijo, recalcular existencia y stock a partir del padre
+		if producto.Padre > 0 && producto.Equivalencia > 0 {
+			filaPadre := db.QueryRow(`SELECT existencia, stock FROM productos WHERE idProducto = ? LIMIT 1;`, producto.Padre)
+			var existenciaPadre, stockPadre float64
+			if err := filaPadre.Scan(&existenciaPadre, &stockPadre); err == nil {
+				producto.Existencia = RoundToTwoDecimals(existenciaPadre * float64(producto.Equivalencia))
+				producto.Stock = RoundToTwoDecimals(stockPadre * float64(producto.Equivalencia))
+			}
 		}
 		productos = append(productos, producto)
 	}
