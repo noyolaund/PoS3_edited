@@ -65,11 +65,8 @@
                   hint="Si la existencia del producto es menor al stock, le avisaremos"
                 ></v-text-field>
               </v-flex>
+
               <v-flex xs12 md6>
-                <v-checkbox
-                  v-model="esHijo"
-                  label="Este producto es hijo (pieza)"
-                ></v-checkbox>
                 <v-select
                   v-if="esHijo"
                   :items="padres"
@@ -79,13 +76,7 @@
                   v-model="producto.padre"
                   hint="Seleccione el producto contenedor (cartón)"
                 ></v-select>
-                <v-text-field
-                  v-if="esHijo"
-                  label="Equivalencia (piezas por contenedor)"
-                  type="number"
-                  v-model.number="producto.equivalencia"
-                  hint="Cuántas piezas contiene un cartón (p.ej. 12)"
-                ></v-text-field>
+
                 <v-text-field
                   v-if="!esHijo"
                   label="Existencia actual"
@@ -95,6 +86,27 @@
                   hint="Existencia actual"
                   required
                 ></v-text-field>
+              </v-flex>
+
+              <!-- Fila: checkbox (izquierda) y equivalencia (derecha) -->
+              <v-flex xs12 md6>
+                <v-checkbox
+                  v-model="esHijo"
+                  label="Este producto es hijo (pieza)"
+                ></v-checkbox>
+              </v-flex>
+
+              <v-flex xs12 md6>
+                <v-text-field
+                  v-if="esHijo"
+                  label="Equivalencia (piezas por contenedor)"
+                  type="number"
+                  v-model.number="producto.equivalencia"
+                  hint="Cuántas piezas contiene un cartón (p.ej. 12)"
+                ></v-text-field>
+              </v-flex>
+
+              <v-flex xs12>
                 <v-alert v-if="esHijo" type="info" dense>
                   La existencia se gestionará desde el producto padre. Use "Agregar inventario" para reabastecer piezas.
                 </v-alert>

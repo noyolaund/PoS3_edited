@@ -74,11 +74,8 @@
                   hint="Si la existencia del producto es menor al stock, le avisaremos"
                 ></v-text-field>
               </v-flex>
+
               <v-flex xs12 md6>
-                <v-checkbox
-                  v-model="esHijo"
-                  label="Este producto es hijo (pieza)"
-                ></v-checkbox>
                 <v-select
                   v-if="esHijo"
                   :items="padres"
@@ -88,13 +85,7 @@
                   v-model="producto.Padre"
                   hint="Seleccione el producto contenedor (cartón)"
                 ></v-select>
-                <v-text-field
-                  v-if="esHijo"
-                  label="Equivalencia (piezas por contenedor)"
-                  type="number"
-                  v-model.number="producto.Equivalencia"
-                  hint="Cuántas piezas contiene un cartón (p.ej. 12)"
-                ></v-text-field>
+
                 <v-text-field
                   v-if="!esHijo"
                   label="Existencia actual"
@@ -104,6 +95,27 @@
                   hint="Existencia actual"
                   required
                 ></v-text-field>
+              </v-flex>
+
+              <!-- Nueva fila: checkbox bajo Stock (izquierda) y Equivalencia bajo Producto padre (derecha) -->
+              <v-flex xs12 md6>
+                <v-checkbox
+                  v-model="esHijo"
+                  label="Este producto es hijo (pieza)"
+                ></v-checkbox>
+              </v-flex>
+
+              <v-flex xs12 md6>
+                <v-text-field
+                  v-if="esHijo"
+                  label="Equivalencia (piezas por contenedor)"
+                  type="number"
+                  v-model.number="producto.Equivalencia"
+                  hint="Cuántas piezas contiene un cartón (p.ej. 12)"
+                ></v-text-field>
+              </v-flex>
+
+              <v-flex xs12>
                 <v-alert v-if="esHijo" type="info" dense>
                   La existencia se gestiona desde el producto padre. Use "Agregar inventario" para reabastecer piezas.
                 </v-alert>
