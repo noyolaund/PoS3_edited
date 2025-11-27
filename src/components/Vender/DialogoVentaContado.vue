@@ -69,6 +69,13 @@
           @click.native="guardar()"
           >Terminar venta</v-btn
         >
+        <v-btn
+          :loading="cargando"
+          color="indigo darken-1"
+          flat="flat"
+          @click.native="guardarConTicket()"
+          >Terminar venta con Ticket</v-btn
+        >
         <v-btn color="gray" flat="flat" @click.native="cerrarDialogo()"
           >Cerrar</v-btn
         >
@@ -148,7 +155,34 @@ export default {
         if (resultados) {
           this.$emit("venta-realizada");
           this.prepararNuevaVenta();
-          await FUNCIONES.imprimirTicketVentaContado(resultados.Numero);
+        }
+      }
+    }
+    ,
+    async guardarConTicket() {
+      if (this.$refs.formulario.validate()) {
+        if (this.cambio < 0) return this.$emit("error-pago-incompleto");
+        let cliente = Object.assign({}, this.clienteSeleccionado);
+        if (this.tipoCliente === "existenteONuevo") {
+          if (null === cliente || !cliente.Nombre) {
+            return this.$emit("no-hay-cliente");
+          }
+        } else {
+          cliente.Numero = 1;
+        }
+        let venta = {
+          Total: this.datosVenta.total,
+          Productos: this.datosVenta.lista,
+          Cliente: cliente,
+          Pago: this.pagoDelCliente,
+        };
+        this.cargando = true;
+        const resultados = await HTTP_AUTH.post("venta/contado", venta);
+        this.cargando = false;
+        if (resultados) {
+          await FUNCIONES.imprimirTicketVentaContado(resultados.Numero, { suppressRouting: true });
+          this.$emit("venta-realizada-con-ticket");
+          this.prepararNuevaVenta();
         }
       }
     }

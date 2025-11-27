@@ -345,13 +345,15 @@ export const FUNCIONES = {
     conector.Pulso(48, 60, 120).CorteParcial().Corte(1);
     return await conector.imprimirEn(await HTTP_AUTH.get("nombre/impresora"));
   },
-  async imprimirTicketVentaContado(idVenta) {
+  async imprimirTicketVentaContado(idVenta, options = {}) {
     const impresionEscpos = (await HTTP_AUTH.get("valor/MODO_IMPRESION") === "Impresora térmica");
     if (!impresionEscpos) {
-      Vue.$router.push({
-        name: "TicketDeVentaContado",
-        params: { idVenta },
-      });
+      if (!options.suppressRouting) {
+        Vue.$router.push({
+          name: "TicketDeVentaContado",
+          params: { idVenta },
+        });
+      }
       return;
     }
     const serial = await HTTP_AUTH.get("valor/SERIAL_PLUGIN_IMPRESION");

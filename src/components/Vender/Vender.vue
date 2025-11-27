@@ -24,6 +24,7 @@
         @error-pago-incompleto="onErrorPagoIncompleto"
         @no-hay-cliente="onErrorNoCliente"
         @venta-realizada="onVentaContadoRealizada"
+        @venta-realizada-con-ticket="onVentaContadoRealizadaConTicket"
         @cerrar-dialogo="dialogos.contado = false"
         ref="dialogoVentaContado"
         @agregar-cliente="onAgregarCliente"
@@ -301,6 +302,11 @@ export default {
       this.snackbars.productoNoExistente = true;
     },
     onVentaContadoRealizada() {
+      this.dialogos.contado = false;
+      this.onCancelarVenta();
+      this.snackbars.ventaCorrecta = true;
+    },
+    onVentaContadoRealizadaConTicket() {
       this.dialogos.contado = false;
       this.onCancelarVenta();
       this.snackbars.ventaCorrecta = true;
