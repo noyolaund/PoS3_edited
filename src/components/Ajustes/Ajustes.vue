@@ -18,6 +18,10 @@
           Otros
           <v-icon>build</v-icon>
         </v-tab>
+        <v-tab href="#tab-4">
+          Ticket
+          <v-icon>receipt</v-icon>
+        </v-tab>
         <v-tab-item value="tab-1">
           <DatosNegocio @guardado="guardado = true"></DatosNegocio>
         </v-tab-item>
@@ -26,6 +30,9 @@
         </v-tab-item>
         <v-tab-item value="tab-3">
           <Otros @guardado="guardado = true"></Otros>
+        </v-tab-item>
+        <v-tab-item value="tab-4">
+          <PersonalizacionTicket @guardado="guardado = true"></PersonalizacionTicket>
         </v-tab-item>
       </v-tabs>
       <v-snackbar
@@ -45,11 +52,12 @@
 import DatosNegocio from './DatosNegocio'
 import Impresora from './Impresora'
 import Otros from './Otros'
+import PersonalizacionTicket from './PersonalizacionTicket'
 import { EventBus } from "../../main";
 import Publicidad from "../Publicidad";
 
 export default {
-  components: { Publicidad, DatosNegocio, Impresora, Otros },
+  components: { Publicidad, DatosNegocio, Impresora, Otros, PersonalizacionTicket },
   beforeMount() {
     EventBus.$emit("ponerTitulo", "Ajustes");
   },

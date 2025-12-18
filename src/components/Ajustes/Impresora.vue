@@ -11,15 +11,18 @@
         >
         y después regrese a este apartado. De otro modo, no funcionará.
       </v-alert>
+      <v-alert type="info" :value="modoImpresion === 'BridgeJavascript'">
+        Asegúrese de ejecutar el bridge local (node server.js) en el puerto 8001.
+      </v-alert>
       <v-select
-        :items="['Navegador web', 'Impresora térmica']"
+        :items="['Navegador web', 'Impresora térmica', 'BridgeJavascript']"
         v-model="modoImpresion"
         label="Modo de impresión"
         @change="onModoImpresionCambiado"
       >
       </v-select>
       <v-select
-        v-show="modoImpresion === 'Impresora térmica'"
+        v-show="modoImpresion === 'Impresora térmica' || modoImpresion === 'BridgeJavascript'"
         :loading="cargandoImpresoras"
         :items="impresoras"
         v-model="impresoraSelecionada"
@@ -35,7 +38,7 @@
       <v-btn
         :loading="probandoImpresora"
         @click="probarCon(impresoraSelecionada)"
-        v-show="impresoraSelecionada && modoImpresion === 'Impresora térmica'"
+        v-show="impresoraSelecionada && (modoImpresion === 'Impresora térmica' || modoImpresion === 'BridgeJavascript')"
         color="info"
         >Imprimir ticket de prueba
       </v-btn>
@@ -113,6 +116,7 @@
 
 <script>
 import ConectorPluginV3 from "../../ConectorPluginV3";
+import ConectorJavascript from "../../ConectorJavascript";
 import { HTTP_AUTH } from "../../http-common";
 
 export default {
@@ -131,7 +135,7 @@ export default {
     },
     async onModoImpresionCambiado() {
       await this.guardarModoImpresion();
-      if (this.modoImpresion === "Impresora térmica") {
+      if (this.modoImpresion === "Impresora térmica" || this.modoImpresion === "BridgeJavascript") {
         this.obtener();
       }
     },
@@ -140,10 +144,27 @@ export default {
       this.modoImpresion = await HTTP_AUTH.get("valor/MODO_IMPRESION");
     },
     async guardarModoImpresion() {
-      await HTTP_AUTH.put("valor", {
+      console.log('[Impresora] ANTES de guardar - Modo:', this.modoImpresion);
+      
+      const resultadoGuardado = await HTTP_AUTH.put("valor", {
         Clave: "MODO_IMPRESION",
         Valor: this.modoImpresion,
       });
+      
+      console.log('[Impresora] Respuesta del PUT:', resultadoGuardado);
+      
+      // Verificar inmediatamente si se guardó
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const valorLeido = await HTTP_AUTH.get("valor/MODO_IMPRESION");
+      
+      console.log('[Impresora] DESPUÉS de guardar - Valor leído:', valorLeido);
+      console.log('[Impresora] ¿Coincide?', valorLeido === this.modoImpresion);
+      
+      // Si el backend no guardó correctamente, usar localStorage como respaldo
+      if (!valorLeido || valorLeido === '') {
+        console.warn('[Impresora] Backend no guardó el valor. Usando localStorage como respaldo.');
+        localStorage.setItem('MODO_IMPRESION', this.modoImpresion);
+      }
     },
     guardarImpresora() {
       this.guardandoImpresora = true;
@@ -159,10 +180,15 @@ export default {
     },
     async probarCon(nombreImpresora) {
       this.probandoImpresora = true;
-      const conector = new ConectorPluginV3(
-        ConectorPluginV3.URL_PLUGIN_POR_DEFECTO,
-        this.serialImpresion
-      );
+      let conector;
+      if (this.modoImpresion === "BridgeJavascript") {
+        conector = new ConectorJavascript();
+      } else {
+        conector = new ConectorPluginV3(
+          ConectorPluginV3.URL_PLUGIN_POR_DEFECTO,
+          this.serialImpresion
+        );
+      }
       const resultados = await conector
         .Iniciar()
         .EscribirTexto(
@@ -183,7 +209,11 @@ export default {
     },
     async obtener() {
       this.cargandoImpresoras = true;
-      this.impresoras = await ConectorPluginV3.obtenerImpresoras();
+      if (this.modoImpresion === "BridgeJavascript") {
+        this.impresoras = await ConectorJavascript.obtenerImpresoras();
+      } else {
+        this.impresoras = await ConectorPluginV3.obtenerImpresoras();
+      }
       const nombreImpresora = await HTTP_AUTH.get("nombre/impresora");
       if (nombreImpresora) this.impresoraSelecionada = nombreImpresora;
       this.cargandoImpresoras = false;

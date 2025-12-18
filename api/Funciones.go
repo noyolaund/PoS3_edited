@@ -259,7 +259,7 @@ func obtenerSerialDisco() string {
 }
 
 func nombreBDAPartirDeNegocio(idNegocio int) string {
-	return fmt.Sprintf("%s%d", PrefijoBDNegocios, idNegocio)
+	return fmt.Sprintf("%s", PrefijoBDNegocios)
 }
 
 func generarTokenSeguro() (string, error) {

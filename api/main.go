@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+
 	"time"
 
 	"github.com/gorilla/mux"
@@ -37,6 +38,9 @@ func init() {
 	}
 
 }
+
+
+
 func main() {
 	/*
 	   Poner un log para, valga la redundancia, loguear
@@ -56,6 +60,9 @@ func main() {
 	defer ficheroLog.Close()
 	log.SetOutput(ficheroLog)
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	
+
+	
 	enrutador := mux.NewRouter()
 	configurarRutas(enrutador)
 	/*

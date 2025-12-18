@@ -1,28 +1,15 @@
 <template>
   <v-container fluid fluid-xs>
     <v-layout row wrap>
-      <v-flex xs12>
-        <v-btn color="info" @click="mostrar = !mostrar" :flat="!mostrar" small>
-          Filtrar
-          <v-icon>filter_list</v-icon>
-        </v-btn>
-      </v-flex>
-    </v-layout>
-    <v-slide-y-transition>
-      <v-layout row wrap v-show="mostrar">
         <v-flex xs12 sm3>
-          <v-menu
+          <v-dialog
             ref="menuFechaInicio"
-            :close-on-content-click="false"
             v-model="menuFechaInicio"
-            :nudge-right="40"
             :return-value.sync="fechaInicio"
+            persistent
             lazy
-            transition="scale-transition"
-            offset-y
             full-width
-            max-width="290px"
-            min-width="290px"
+            width="290px"
           >
             <v-text-field
               slot="activator"
@@ -30,6 +17,7 @@
               label="Ver desde"
               prepend-icon="event"
               readonly
+              @click.native="menuFechaInicio = true"
             ></v-text-field>
             <v-date-picker locale="es-419" v-model="fechaInicio" scrollable>
               <v-spacer></v-spacer>
@@ -40,21 +28,17 @@
                 >OK</v-btn
               >
             </v-date-picker>
-          </v-menu>
+          </v-dialog>
         </v-flex>
         <v-flex xs12 sm3>
-          <v-menu
+          <v-dialog
             ref="menuFechaFin"
-            :close-on-content-click="false"
             v-model="menuFechaFin"
-            :nudge-right="40"
             :return-value.sync="fechaFin"
+            persistent
             lazy
-            transition="scale-transition"
-            offset-y
             full-width
-            max-width="290px"
-            min-width="290px"
+            width="290px"
           >
             <v-text-field
               slot="activator"
@@ -62,6 +46,7 @@
               label="Hasta"
               prepend-icon="event"
               readonly
+              @click.native="menuFechaFin = true"
             ></v-text-field>
             <v-date-picker locale="es-419" v-model="fechaFin" scrollable>
               <v-spacer></v-spacer>
@@ -70,7 +55,7 @@
               >
               <v-btn flat color="primary" @click="guardarFechaFin()">OK</v-btn>
             </v-date-picker>
-          </v-menu>
+          </v-dialog>
         </v-flex>
         <v-flex xs12 sm6>
           <v-btn
@@ -99,7 +84,6 @@
           </v-btn>
         </v-flex>
       </v-layout>
-    </v-slide-y-transition>
   </v-container>
 </template>
 <script>

@@ -88,6 +88,9 @@ import { HTTP_AUTH } from "../../http-common";
 import DetallesClienteSeleccionado from "../Vender/DetallesClienteSeleccionado";
 import AutocompletadoClientes from "../Vender/AutocompletadoClientes";
 import { FUNCIONES } from '../../funciones';
+import { obtenerModoImpresion } from '../../modoImpresionHelper';
+import ConectorJavascript from '../../ConectorJavascript';
+import ConectorPluginV3 from '../../ConectorPluginV3';
 
 export default {
   components: { DetallesClienteSeleccionado, AutocompletadoClientes },
@@ -160,11 +163,17 @@ export default {
     }
     ,
     async guardarConTicket() {
+      console.log('[DialogoVentaContado] guardarConTicket iniciado');
       if (this.$refs.formulario.validate()) {
-        if (this.cambio < 0) return this.$emit("error-pago-incompleto");
+        console.log('[DialogoVentaContado] Formulario válido');
+        if (this.cambio < 0) {
+          console.log('[DialogoVentaContado] Pago incompleto');
+          return this.$emit("error-pago-incompleto");
+        }
         let cliente = Object.assign({}, this.clienteSeleccionado);
         if (this.tipoCliente === "existenteONuevo") {
           if (null === cliente || !cliente.Nombre) {
+            console.log('[DialogoVentaContado] No hay cliente seleccionado');
             return this.$emit("no-hay-cliente");
           }
         } else {
@@ -176,14 +185,128 @@ export default {
           Cliente: cliente,
           Pago: this.pagoDelCliente,
         };
+        console.log('[DialogoVentaContado] Guardando venta:', venta);
         this.cargando = true;
         const resultados = await HTTP_AUTH.post("venta/contado", venta);
         this.cargando = false;
+        console.log('[DialogoVentaContado] Venta guardada, resultado:', resultados);
         if (resultados) {
-          await FUNCIONES.imprimirTicketVentaContado(resultados.Numero, { suppressRouting: true });
+          console.log('[DialogoVentaContado] Llamando a imprimirTicketVentaContado con ID:', resultados.Numero);
+          
+          // Verificar modo de impresión con localStorage fallback
+          const modoImpresion = await obtenerModoImpresion();
+          console.log('[DialogoVentaContado] Modo de impresión obtenido:', modoImpresion);
+          
+          if (modoImpresion === "Impresora térmica" || modoImpresion === "BridgeJavascript") {
+            console.log('[DialogoVentaContado] Modo es térmico/bridge, imprimiendo directamente');
+            
+            // Obtener datos para imprimir
+            const venta = await HTTP_AUTH.get("venta/contado/" + resultados.Numero);
+            const ajustesEmpresa = await HTTP_AUTH.get("ajustes/empresa");
+            const nombreImpresora = await HTTP_AUTH.get("nombre/impresora");
+            const logotipo = require("@/assets/inicio/logo.png");
+            
+            // Crear conector según el modo
+            let conector;
+            if (modoImpresion === "BridgeJavascript") {
+              console.log('[DialogoVentaContado] Usando ConectorJavascript');
+              conector = new ConectorJavascript();
+            } else {
+              console.log('[DialogoVentaContado] Usando ConectorPluginV3');
+              const serial = await HTTP_AUTH.get("valor/SERIAL_PLUGIN_IMPRESION");
+              conector = new ConectorPluginV3(ConectorPluginV3.URL_PLUGIN_POR_DEFECTO, serial);
+            }
+            
+            // Construir ticket
+            conector
+              .Iniciar()
+              .DeshabilitarElModoDeCaracteresChinos()
+              .ImprimirImagenEnBase64(logotipo, ConectorPluginV3.TAMAÑO_IMAGEN_NORMAL, 320)
+              .EstablecerAlineacion(ConectorPluginV3.ALINEACION_CENTRO)
+              .EstablecerEnfatizado(true)
+              .EscribirTexto("Ticket de venta #" + resultados.Numero + "\n")
+              .EstablecerEnfatizado(false);
+            
+            // Datos de la empresa
+            const claves = ["Nombre", "Direccion", "Telefono"];
+            for (const clave of claves) {
+              if (ajustesEmpresa[clave]) {
+                conector.EscribirTexto(ajustesEmpresa[clave] + "\n");
+              }
+            }
+            
+            const textoCustom = await HTTP_AUTH.get("valor/TEXTO_TICKET_CUSTOM");
+            const nombreNegocio = textoCustom ? textoCustom : "Deposito Beer Broos";
+
+            conector
+              .EscribirTexto(new Date().toLocaleString() + "\n")
+              .EscribirTexto("Lo atendio: ")
+              .EstablecerEnfatizado(true)
+              .EscribirTexto(venta.Usuario.Nombre + "\n")
+              .EstablecerEnfatizado(false)
+              .EstablecerAlineacion(ConectorPluginV3.ALINEACION_CENTRO)
+              .EstablecerEnfatizado(true)
+              .EscribirTexto("*** " + nombreNegocio + " ***\n")
+              .EstablecerEnfatizado(false)
+              .EscribirTexto("--------------------------\n");
+            
+            // Productos
+            for (const producto of venta.Productos) {
+              conector
+                .EstablecerAlineacion(ConectorPluginV3.ALINEACION_IZQUIERDA)
+                .EscribirTexto(producto.Descripcion + "\n")
+                .EstablecerAlineacion(ConectorPluginV3.ALINEACION_DERECHA)
+                .EscribirTexto(`${producto.Cantidad} x $${producto.PrecioVenta} = $${producto.Cantidad * producto.PrecioVenta}\n`);
+            }
+            
+            conector
+              .EstablecerAlineacion(ConectorPluginV3.ALINEACION_CENTRO)
+              .EscribirTexto("--------------------------\n")
+              .EstablecerAlineacion(ConectorPluginV3.ALINEACION_DERECHA)
+              .EstablecerEnfatizado(true)
+              .EscribirTexto("Total: ")
+              .EstablecerEnfatizado(false)
+              .EscribirTexto("$" + venta.Total + "\n")
+              .EstablecerEnfatizado(true)
+              .EscribirTexto("Su pago: ")
+              .EstablecerEnfatizado(false)
+              .EscribirTexto("$" + venta.Pago + "\n")
+              .EstablecerEnfatizado(true)
+              .EscribirTexto("Cambio: ")
+              .EstablecerEnfatizado(false)
+              .EscribirTexto("$" + (venta.Pago - venta.Total) + "\n");
+            
+            if (ajustesEmpresa.MensajePersonal) {
+              conector
+                .EstablecerAlineacion(ConectorPluginV3.ALINEACION_CENTRO)
+                .EstablecerEnfatizado(true)
+                .EscribirTexto(ajustesEmpresa.MensajePersonal + "\n");
+            }
+            
+            conector
+              .EstablecerAlineacion(ConectorPluginV3.ALINEACION_CENTRO)
+              .EscribirTexto("\n")
+              .EstablecerEnfatizado(true)
+              .EscribirTexto("GRACIAS POR SU COMPRA\n")
+              .EstablecerEnfatizado(false);
+            
+            conector.Pulso(48, 60, 120).CorteParcial().Corte(1);
+            
+            console.log('[DialogoVentaContado] Enviando a imprimir en:', nombreImpresora);
+            const resultado = await conector.imprimirEn(nombreImpresora);
+            console.log('[DialogoVentaContado] Resultado de impresión:', resultado);
+          } else {
+            console.log('[DialogoVentaContado] Modo no es térmico/bridge, saltando impresión');
+          }
+          
+          console.log('[DialogoVentaContado] Impresión completada');
           this.$emit("venta-realizada-con-ticket");
           this.prepararNuevaVenta();
+        } else {
+          console.error('[DialogoVentaContado] No se recibió resultado de la venta');
         }
+      } else {
+        console.log('[DialogoVentaContado] Formulario inválido');
       }
     }
   },

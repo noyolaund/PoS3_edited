@@ -248,6 +248,41 @@ export default {
         this.focusCodigoInicial();
         return;
       }
+
+      // + -> Aumentar cantidad del primer producto
+      if (event.key === "+" || event.keyCode === 107) {
+        if (this.puedeEditarCantidad()) {
+          event.preventDefault();
+          this.$refs.listaDeProductos.aumentarCantidadPrimerProducto();
+        }
+        return;
+      }
+
+      // - -> Disminuir cantidad del primer producto
+      if (event.key === "-" || event.keyCode === 109) {
+        if (this.puedeEditarCantidad()) {
+          event.preventDefault();
+          this.$refs.listaDeProductos.disminuirCantidadPrimerProducto();
+        }
+        return;
+      }
+    },
+
+    puedeEditarCantidad() {
+      // Verificar si hay diálogos abiertos
+      if (
+        this.dialogos.contado ||
+        this.dialogos.apartado ||
+        this.dialogos.nuevoCliente ||
+        this.dialogos.buscar ||
+        this.dialogos.confirmarEliminacion
+      ) {
+        return false;
+      }
+      
+      // Verificar si el foco está en un input que no sea el principal
+      // (Opcional: refinar esta lógica si es necesario)
+      return true;
     },
 
     focusAutocompletado() {

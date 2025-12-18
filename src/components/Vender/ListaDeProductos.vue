@@ -135,28 +135,34 @@ export default {
       {
         text: "#",
         align: "left",
-        value: "Numero"
+        value: "Numero",
+        sortable: false
       },
       {
         text: "Código de barras",
         align: "left",
-        value: "CodigoBarras"
+        value: "CodigoBarras",
+        sortable: false
       },
       {
         text: "Descripción",
-        value: "Descripcion"
+        value: "Descripcion",
+        sortable: false
       },
       {
         text: "Cantidad",
-        value: "Cantidad"
+        value: "Cantidad",
+        sortable: false
       },
       {
         text: "Precio",
-        value: "PrecioVenta"
+        value: "PrecioVenta",
+        sortable: false
       },
       {
         text: "Total",
-        value: "Total"
+        value: "Total",
+        sortable: false
       },
       {
         text: "Opciones",
@@ -191,10 +197,8 @@ export default {
     aumentarCantidad(numero) {
       let producto = this.listaDeProductos.find(producto => producto.Numero === numero);
       if (!producto) return;
-      if (producto.Existencia > producto.Cantidad) {
-        this.$set(producto, "Cantidad", producto.Cantidad + 1);
-        this.$set(producto, "Total", producto.PrecioVenta * producto.Cantidad);
-      }
+      this.$set(producto, "Cantidad", producto.Cantidad + 1);
+      this.$set(producto, "Total", producto.PrecioVenta * producto.Cantidad);
     },
     disminuirCantidad(numero) {
       let producto = this.listaDeProductos.find(producto => producto.Numero === numero);
@@ -214,7 +218,7 @@ export default {
         productoExistente => productoExistente.Numero === producto.Numero
       );
       if (indice === -1) {
-        this.listaDeProductos.push({
+        this.listaDeProductos.unshift({
           Numero: producto.Numero,
           Descripcion: producto.Descripcion,
           Cantidad: 1,
@@ -227,11 +231,9 @@ export default {
         });
       } else {
         let productoExistente = this.listaDeProductos[indice];
-        if (productoExistente.Cantidad < productoExistente.Existencia) {
-          productoExistente.Cantidad++;
-          productoExistente.Total =
-            productoExistente.Cantidad * productoExistente.PrecioVenta;
-        }
+        productoExistente.Cantidad++;
+        productoExistente.Total =
+          productoExistente.Cantidad * productoExistente.PrecioVenta;
       }
     },
     buscarYAgregarProductoSiExiste() {
@@ -244,6 +246,16 @@ export default {
           }
           this.codigo = null;
         });
+      }
+    },
+    aumentarCantidadPrimerProducto() {
+      if (this.listaDeProductos.length > 0) {
+        this.aumentarCantidad(this.listaDeProductos[0].Numero);
+      }
+    },
+    disminuirCantidadPrimerProducto() {
+      if (this.listaDeProductos.length > 0) {
+        this.disminuirCantidad(this.listaDeProductos[0].Numero);
       }
     }
   }

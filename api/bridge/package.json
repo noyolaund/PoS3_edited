@@ -1,0 +1,26 @@
+{
+    "name": "pos-printer-bridge",
+    "version": "1.0.0",
+    "description": "Bridge local para impresión ESC/POS desde navegador",
+    "main": "server.js",
+    "bin": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "build": "pkg . --targets node18-win-x64 --output ../dist/bridge/printer-bridge.exe"
+    },
+    "dependencies": {
+        "body-parser": "^1.20.2",
+        "cors": "^2.8.5",
+        "express": "^4.18.2"
+    },
+    "devDependencies": {
+        "pkg": "^5.8.1"
+    },
+    "pkg": {
+        "assets": [],
+        "targets": [
+            "node18-win-x64"
+        ],
+        "outputPath": "../dist/bridge"
+    }
+}

@@ -13,9 +13,27 @@ func (a *AjustesController) guardarValor(valor string, clave string) {
 		nombreTabla:    "comun",
 		AjustesUsuario: a.AjustesUsuario,
 	}
-	ayudante.actualizarDonde("clave", clave, map[string]interface{}{
-		"valor": valor,
-	})
+	if a.existeClave(clave) {
+		ayudante.actualizarDonde("clave", clave, map[string]interface{}{
+			"valor": valor,
+		})
+	} else {
+		ayudante.insertar(map[string]interface{}{
+			"clave": clave,
+			"valor": valor,
+		})
+	}
+}
+
+func (a *AjustesController) existeClave(clave string) bool {
+	db, err := a.AjustesUsuario.obtenerBaseDeDatos()
+	if err != nil {
+		return false
+	}
+	defer db.Close()
+	var conteo int
+	err = db.QueryRow("SELECT COUNT(*) FROM comun WHERE clave = ?", clave).Scan(&conteo)
+	return err == nil && conteo > 0
 }
 
 func (a *AjustesController) obtenerValor(clave string) string {

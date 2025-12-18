@@ -126,16 +126,21 @@ export default {
             .finally(() => (this.cargando = false));
         });
     },
-    imprimir() {
+    async imprimir() {
       if (this.cargando) return;
-      EventBus.$emit("ocultarMenu");
-      setTimeout(() => {
-        let tituloOriginal = document.title;
-        document.title = `Venta al contado #${this.venta.Numero}`;
-        window.print();
-        document.title = tituloOriginal;
-        EventBus.$emit("mostrarMenu");
-      }, TimeoutOcultarMenuTickets);
+      // Pero aquí queremos que si NO es térmica, se abra la ventana de impresión del navegador.
+      // Necesitamos saber el modo.
+      const modoImpresion = await HTTP_AUTH.get("valor/MODO_IMPRESION");
+      if (modoImpresion !== "Impresora térmica" && modoImpresion !== "BridgeJavascript") {
+          EventBus.$emit("ocultarMenu");
+          setTimeout(() => {
+            let tituloOriginal = document.title;
+            document.title = `Venta al contado #${this.venta.Numero}`;
+            window.print();
+            document.title = tituloOriginal;
+            EventBus.$emit("mostrarMenu");
+          }, TimeoutOcultarMenuTickets);
+      }
     },
     volver() {
       this.$router.go(-1);
