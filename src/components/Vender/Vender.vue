@@ -340,16 +340,25 @@ export default {
       this.dialogos.contado = false;
       this.onCancelarVenta();
       this.snackbars.ventaCorrecta = true;
+      this.$nextTick(() => {
+        this.focusCodigoInicial();
+      });
     },
     onVentaContadoRealizadaConTicket() {
       this.dialogos.contado = false;
       this.onCancelarVenta();
       this.snackbars.ventaCorrecta = true;
+      this.$nextTick(() => {
+        this.focusCodigoInicial();
+      });
     },
     onApartadoRealizado() {
       this.dialogos.apartado = false;
       this.onCancelarVenta();
       this.snackbars.apartadoCorrecto = true;
+      this.$nextTick(() => {
+        this.focusCodigoInicial();
+      });
     },
     onClienteGuardado(clienteGuardado) {
       this.dialogos.nuevoCliente = false;

@@ -30,7 +30,7 @@ const (
 	NombreSesion                                = "SublimePosSesion"
 	NombreBaseDeDatosSesiones                   = "./sesiones.sqlite"
 	ClaveCookie                                 = "905ff3f39809b9f9e204204596e234589a99a8fab5e691c08474584a5f3b7523"
-	EdadDeSesionEnSegundos                      = 86400  // Una semana en segundos
+	EdadDeSesionEnSegundos                      = 604800  // Una semana en segundos
 	DominioPermitidoCORS                        = "http://localhost:8080"
 	PuertoServidor                              = ":2106" // Debe coincidir con constantes.js
 	RutaGeneralNoNecesitaComprobacion           = "RUTA_NO_AUTH"
