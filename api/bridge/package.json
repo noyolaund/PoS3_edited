@@ -6,7 +6,9 @@
     "bin": "server.js",
     "scripts": {
         "start": "node server.js",
-        "build": "pkg . --targets node18-win-x64 --output ../dist/bridge/printer-bridge.exe"
+        "build": "pkg . --targets node18-win-x64 --output ../dist/bridge/printer-bridge.exe",
+        "build:rpi": "pkg . --targets node18-linux-arm64 --output ../dist/bridge/printer-bridge",
+        "build:rpi32": "pkg . --targets node18-linux-armv7 --output ../dist/bridge/printer-bridge"
     },
     "dependencies": {
         "body-parser": "^1.20.2",
@@ -19,7 +21,9 @@
     "pkg": {
         "assets": [],
         "targets": [
-            "node18-win-x64"
+            "node18-win-x64",
+            "node18-linux-arm64",
+            "node18-linux-armv7"
         ],
         "outputPath": "../dist/bridge"
     }
